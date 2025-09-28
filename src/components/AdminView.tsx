@@ -3,12 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Copy, Trash2, Clock, LogOut, Zap, ArrowLeft } from 'lucide-react';
-
-interface CodeEntry {
-  code: string;
-  generated: number;
-  expiry: number;
-}
+import { useAuth } from '@/contexts/AuthContext';
+import { useProjectCodes } from '@/hooks/useProjectCodes';
 
 interface AdminViewProps {
   onLogout: () => void;
@@ -16,79 +12,44 @@ interface AdminViewProps {
 }
 
 export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
-  const [currentCode, setCurrentCode] = useState<CodeEntry | null>(null);
-  const [codeHistory, setCodeHistory] = useState<CodeEntry[]>([]);
+  const { signOut } = useAuth();
+  const { codes, loading, activeCode, generateCode, invalidateCode } = useProjectCodes();
   const [timeLeft, setTimeLeft] = useState<string>('');
 
+  // Update countdown timer
   useEffect(() => {
-    loadStoredData();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    const interval = setInterval(() => {
+      if (activeCode) {
+        const now = new Date();
+        const expiresAt = new Date(activeCode.expires_at);
+        const timeRemaining = expiresAt.getTime() - now.getTime();
+        
+        if (timeRemaining <= 0) {
+          setTimeLeft('Expired');
+          return;
+        }
 
-  const loadStoredData = () => {
-    const storedCode = localStorage.getItem('trackingCode');
-    const storedHistory = localStorage.getItem('codeHistory');
-
-    if (storedCode) {
-      const codeData = JSON.parse(storedCode);
-      if (codeData.expiry > Date.now()) {
-        setCurrentCode(codeData);
+        const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        
+        setTimeLeft(`${days}d ${hours}h ${minutes}m`);
       } else {
-        localStorage.removeItem('trackingCode');
-      }
-    }
-
-    if (storedHistory) {
-      setCodeHistory(JSON.parse(storedHistory));
-    }
-  };
-
-  const updateCountdown = () => {
-    if (currentCode) {
-      const now = Date.now();
-      const timeRemaining = currentCode.expiry - now;
-      
-      if (timeRemaining <= 0) {
-        setCurrentCode(null);
         setTimeLeft('');
-        localStorage.removeItem('trackingCode');
-        return;
       }
+    }, 1000);
 
-      const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-      
-      setTimeLeft(`${days}d ${hours}h ${minutes}m`);
-    }
+    return () => clearInterval(interval);
+  }, [activeCode]);
+
+  const handleGenerateCode = async () => {
+    await generateCode();
   };
 
-  const generateCode = () => {
-    const code = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-    const generated = Date.now();
-    const expiry = generated + (2 * 24 * 60 * 60 * 1000); // 2 days
-
-    const codeEntry: CodeEntry = { code, generated, expiry };
-    
-    setCurrentCode(codeEntry);
-    localStorage.setItem('trackingCode', JSON.stringify(codeEntry));
-
-    // Add to history
-    const updatedHistory = [codeEntry, ...codeHistory].slice(0, 10); // Keep last 10
-    setCodeHistory(updatedHistory);
-    localStorage.setItem('codeHistory', JSON.stringify(updatedHistory));
-
-    toast({
-      title: "Code Generated",
-      description: `New tracking code: ${code}`,
-    });
-  };
-
-  const copyCode = async () => {
-    if (currentCode) {
+  const handleCopyCode = async () => {
+    if (activeCode) {
       try {
-        await navigator.clipboard.writeText(currentCode.code);
+        await navigator.clipboard.writeText(activeCode.code);
         toast({
           title: "Copied!",
           description: "Code copied to clipboard",
@@ -103,40 +64,19 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
     }
   };
 
-  const invalidateCode = () => {
-    setCurrentCode(null);
-    setTimeLeft('');
-    localStorage.removeItem('trackingCode');
-    toast({
-      title: "Code Invalidated",
-      description: "Current tracking code has been expired",
-    });
-  };
-
-  const expireIndividualCode = (codeToExpire: string) => {
-    const updatedHistory = codeHistory.map(entry => 
-      entry.code === codeToExpire 
-        ? { ...entry, expiry: Date.now() - 1 } 
-        : entry
-    );
-    setCodeHistory(updatedHistory);
-    localStorage.setItem('codeHistory', JSON.stringify(updatedHistory));
-    
-    // If the current code is being expired, clear it
-    if (currentCode?.code === codeToExpire) {
-      setCurrentCode(null);
-      setTimeLeft('');
-      localStorage.removeItem('trackingCode');
+  const handleInvalidateCode = async () => {
+    if (activeCode) {
+      await invalidateCode(activeCode.id);
     }
-    
-    toast({
-      title: "Code Expired",
-      description: `Code ${codeToExpire} has been expired`,
-    });
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString();
+  const handleLogout = async () => {
+    await signOut();
+    onLogout();
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
   };
 
   return (
@@ -161,7 +101,7 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
             </div>
             <p className="text-muted-foreground text-sm md:text-base">Manage freelancer project access codes</p>
           </div>
-          <Button variant="outline" onClick={onLogout} className="self-start sm:self-auto hover-scale">
+          <Button variant="outline" onClick={handleLogout} className="self-start sm:self-auto hover-scale">
             <LogOut className="h-4 w-4 mr-2" />
             Logout
           </Button>
@@ -177,10 +117,10 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {currentCode ? (
+          {activeCode ? (
             <>
               <div className="code-display gradient-text animate-scale-in">
-                {currentCode.code}
+                {activeCode.code}
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="countdown-badge">
@@ -188,11 +128,11 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
                   Expires in: {timeLeft}
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Button onClick={copyCode} className="btn-primary hover-scale">
+                  <Button onClick={handleCopyCode} className="btn-primary hover-scale">
                     <Copy className="h-4 w-4 mr-2" />
                     Copy Code
                   </Button>
-                  <Button variant="destructive" onClick={invalidateCode} className="hover-scale">
+                  <Button variant="destructive" onClick={handleInvalidateCode} className="hover-scale">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Expire Now
                   </Button>
@@ -207,8 +147,17 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
                 </div>
                 <p className="text-muted-foreground mb-6 text-sm md:text-base">No active project code</p>
               </div>
-              <Button onClick={generateCode} className="btn-primary hover-scale" size="lg">
-                <Zap className="h-4 w-4 mr-2" />
+              <Button 
+                onClick={handleGenerateCode} 
+                className="btn-primary hover-scale" 
+                size="lg"
+                disabled={loading}
+              >
+                {loading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                ) : (
+                  <Zap className="h-4 w-4 mr-2" />
+                )}
                 Generate New Code
               </Button>
             </div>
@@ -217,7 +166,7 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
       </Card>
 
       {/* Code History */}
-      {codeHistory.length > 0 && (
+      {codes.length > 0 && (
         <Card className="card-glass animate-fade-in">
           <CardHeader>
             <CardTitle className="text-xl md:text-2xl font-heading">Recent Codes</CardTitle>
@@ -225,48 +174,56 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {codeHistory.slice(0, 5).map((entry, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02]"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="font-mono font-bold text-lg text-primary">{entry.code}</span>
-                      {entry.expiry < Date.now() && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive animate-pulse">
-                          Expired
+              {codes.slice(0, 5).map((code, index) => {
+                const now = new Date();
+                const expiresAt = new Date(code.expires_at);
+                const isExpired = expiresAt <= now || !code.is_active;
+
+                return (
+                  <div
+                    key={code.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02]"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="font-mono font-bold text-lg text-primary">{code.code}</span>
+                        {isExpired ? (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive animate-pulse">
+                            Expired
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
+                            Active
+                          </span>
+                        )}
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                          Used: {code.used_count}
                         </span>
-                      )}
-                      {entry.expiry > Date.now() && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
-                          Active
-                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Generated: {formatDate(code.generated_at)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Expires: {formatDate(code.expires_at)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      {!isExpired && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => invalidateCode(code.id)}
+                          className="hover-scale text-xs"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Expire
+                        </Button>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Generated: {formatDate(entry.generated)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Expires: {formatDate(entry.expiry)}
-                    </p>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {entry.expiry > Date.now() && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => expireIndividualCode(entry.code)}
-                        className="hover-scale text-xs"
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Expire
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

@@ -5,15 +5,16 @@ import { LoginForm } from '@/components/LoginForm';
 import { DeveloperView } from '@/components/DeveloperView';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Users, Shield, Zap, Lock, CheckCircle, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ViewType = 'home' | 'admin' | 'developer' | 'login';
 
 const Index = () => {
+  const { user, loading } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>('home');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleAdminClick = () => {
-    if (isLoggedIn) {
+    if (user) {
       setCurrentView('admin');
     } else {
       setCurrentView('login');
@@ -21,14 +22,20 @@ const Index = () => {
   };
 
   const handleLogin = () => {
-    setIsLoggedIn(true);
     setCurrentView('admin');
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
     setCurrentView('home');
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center mesh-bg">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (currentView === 'login') {
     return (

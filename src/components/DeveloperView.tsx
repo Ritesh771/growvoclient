@@ -5,46 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Code, Unlock, Users, Zap } from 'lucide-react';
+import { useProjectCodes } from '@/hooks/useProjectCodes';
 
 export const DeveloperView = () => {
   const [otpCode, setOtpCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [validationResult, setValidationResult] = useState<'success' | 'failure' | null>(null);
+  const { validateCode } = useProjectCodes();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setValidationResult(null);
 
-    // Simulate validation delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    const storedCode = localStorage.getItem('trackingCode');
-    
-    if (!storedCode) {
-      setValidationResult('failure');
-      toast({
-        title: "Validation Failed",
-        description: "No active project code found",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const codeData = JSON.parse(storedCode);
-      const now = Date.now();
-
-      if (codeData.expiry <= now) {
-        setValidationResult('failure');
-        toast({
-          title: "Code Expired",
-          description: "The project code has expired",
-          variant: "destructive",
-        });
-        localStorage.removeItem('trackingCode');
-      } else if (codeData.code === otpCode.trim()) {
+      const result = await validateCode(otpCode.trim());
+      
+      if (result.valid) {
         setValidationResult('success');
         toast({
           title: "Project Unlocked!",
@@ -53,21 +30,21 @@ export const DeveloperView = () => {
       } else {
         setValidationResult('failure');
         toast({
-          title: "Invalid Code",
-          description: "The entered code is incorrect",
+          title: "Validation Failed",
+          description: result.message,
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       setValidationResult('failure');
       toast({
         title: "Validation Error",
         description: "Could not validate the code",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

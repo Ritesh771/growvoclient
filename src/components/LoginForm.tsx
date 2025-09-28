@@ -1,43 +1,117 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { LogIn, Shield, Zap } from 'lucide-react';
+import { LogIn, Shield, Zap, UserPlus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoginFormProps {
   onLogin: () => void;
 }
 
 export const LoginForm = ({ onLogin }: LoginFormProps) => {
+  const { signIn, signUp, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+
+  // Auto-login if user is already authenticated
+  useEffect(() => {
+    if (user) {
+      onLogin();
+    }
+  }, [user, onLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      // Check if this is the admin trying to sign in with hardcoded credentials
+      if (email === 'growvo@stalight.tech' && password === 'growvo@client') {
+        // Try to sign in first
+        const { error: signInError } = await signIn(email, password);
+        
+        if (signInError && signInError.message.includes('Invalid login credentials')) {
+          // Admin account doesn't exist, create it
+          const { error: signUpError } = await signUp(email, password);
+          if (signUpError) {
+            toast({
+              title: "Account creation failed",
+              description: signUpError.message,
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+          }
+          
+          // Now sign in
+          const { error: secondSignInError } = await signIn(email, password);
+          if (secondSignInError) {
+            toast({
+              title: "Login failed",
+              description: secondSignInError.message,
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+          }
+        } else if (signInError) {
+          toast({
+            title: "Login failed",
+            description: signInError.message,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
 
-    // Hardcoded credentials validation
-    if (email === 'growvo@stalight.tech' && password === 'growvo@client') {
+        toast({
+          title: "Welcome to Growvo!",
+          description: "Successfully logged into client portal",
+        });
+        return; // onLogin will be called via useEffect when user state updates
+      }
+
+      // Handle regular authentication
+      if (isSignUp) {
+        const { error } = await signUp(email, password);
+        if (error) {
+          toast({
+            title: "Sign up failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Account created!",
+            description: "Please check your email to verify your account",
+          });
+          setIsSignUp(false);
+        }
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) {
+          toast({
+            title: "Login failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error: any) {
       toast({
-        title: "Welcome to Growvo!",
-        description: "Successfully logged into client portal",
-      });
-      onLogin();
-    } else {
-      toast({
-        title: "Login failed",
-        description: "Invalid email or password",
+        title: "Authentication error",
+        description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -50,10 +124,13 @@ export const LoginForm = ({ onLogin }: LoginFormProps) => {
             </div>
           </div>
           <CardTitle className="text-2xl md:text-3xl font-heading gradient-text mb-2">
-            Growvo Client Portal
+            {isSignUp ? 'Create Account' : 'Growvo Client Portal'}
           </CardTitle>
           <p className="text-muted-foreground text-sm md:text-base">
-            Enter your credentials to manage project access codes
+            {isSignUp 
+              ? 'Create your account to manage project access codes'
+              : 'Enter your credentials to manage project access codes'
+            }
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -91,10 +168,31 @@ export const LoginForm = ({ onLogin }: LoginFormProps) => {
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
               ) : (
                 <>
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Access Portal
+                  {isSignUp ? (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Create Account
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Access Portal
+                    </>
+                  )}
                 </>
               )}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-sm"
+              onClick={() => setIsSignUp(!isSignUp)}
+              disabled={isLoading}
+            >
+              {isSignUp 
+                ? 'Already have an account? Sign in'
+                : 'Need an account? Sign up'
+              }
             </Button>
           </form>
         </CardContent>
