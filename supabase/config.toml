@@ -1,1 +1,4 @@
 project_id = "fpqjuxgakhrkldjsrhwy"
+
+[functions.github-integration]
+verify_jwt = true

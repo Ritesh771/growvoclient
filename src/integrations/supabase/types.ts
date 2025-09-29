@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      github_commits: {
+        Row: {
+          author_email: string | null
+          author_name: string
+          commit_date: string
+          created_at: string
+          enhanced_category: string | null
+          id: string
+          message: string
+          repo_id: string
+          sha: string
+        }
+        Insert: {
+          author_email?: string | null
+          author_name: string
+          commit_date: string
+          created_at?: string
+          enhanced_category?: string | null
+          id?: string
+          message: string
+          repo_id: string
+          sha: string
+        }
+        Update: {
+          author_email?: string | null
+          author_name?: string
+          commit_date?: string
+          created_at?: string
+          enhanced_category?: string | null
+          id?: string
+          message?: string
+          repo_id?: string
+          sha?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "github_commits_repo_id_fkey"
+            columns: ["repo_id"]
+            isOneToOne: false
+            referencedRelation: "github_repositories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      github_repositories: {
+        Row: {
+          created_at: string
+          id: string
+          owner: string
+          repo: string
+          repo_url: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner: string
+          repo: string
+          repo_url: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner?: string
+          repo?: string
+          repo_url?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
