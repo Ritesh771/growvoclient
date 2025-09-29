@@ -387,13 +387,8 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
         <TabsContent value="github" className="space-y-6">
           <Card className="card-glass">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl md:text-2xl font-heading">
-                <GitBranch className="h-5 w-5 md:h-6 md:w-6" />
-                GitHub Repository Management
-              </CardTitle>
-              <p className="text-muted-foreground text-sm md:text-base">
-                Add and manage GitHub repositories for your projects. Freelancers with valid access codes can view repository analytics.
-              </p>
+              
+              
             </CardHeader>
             <CardContent>
               <GitHubDashboard />
