@@ -33,12 +33,22 @@ serve(async (req) => {
 
     const { action, repoUrl, repoId } = await req.json();
 
+    console.log('GitHub Integration Function - Action:', action, 'RepoId:', repoId, 'UserId:', user.id);
+
     if (action === 'add-repository') {
       return await addRepository(supabaseClient, user.id, repoUrl);
     } else if (action === 'fetch-commits') {
       return await fetchCommits(supabaseClient, repoId);
     } else if (action === 'get-repositories') {
       return await getRepositories(supabaseClient, user.id);
+    } else if (action === 'delete-repository') {
+      if (!repoId) {
+        return new Response(JSON.stringify({ error: 'Repository ID is required for delete action' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      return await deleteRepository(supabaseClient, user.id, repoId);
     }
 
     return new Response(JSON.stringify({ error: 'Invalid action' }), {
@@ -218,6 +228,61 @@ async function getRepositories(supabaseClient: any, userId: string) {
   } catch (error: any) {
     console.error('Error getting repositories:', error);
     return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function deleteRepository(supabaseClient: any, userId: string, repoId: string) {
+  try {
+    console.log('Delete Repository - UserId:', userId, 'RepoId:', repoId);
+    
+    // First verify the repository belongs to the user
+    const { data: repo, error: fetchError } = await supabaseClient
+      .from('github_repositories')
+      .select('id, owner, repo')
+      .eq('id', repoId)
+      .eq('user_id', userId)
+      .single();
+
+    console.log('Repository fetch result:', { repo, fetchError });
+
+    if (fetchError) {
+      console.error('Fetch error:', fetchError);
+      throw new Error(`Failed to fetch repository: ${fetchError.message}`);
+    }
+    
+    if (!repo) {
+      throw new Error('Repository not found or access denied');
+    }
+
+    // Delete the repository (cascading delete will handle commits)
+    const { error: deleteError } = await supabaseClient
+      .from('github_repositories')
+      .delete()
+      .eq('id', repoId)
+      .eq('user_id', userId);
+
+    console.log('Delete operation result:', { deleteError });
+
+    if (deleteError) {
+      console.error('Delete error:', deleteError);
+      throw new Error(`Failed to delete repository: ${deleteError.message}`);
+    }
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: `Repository ${repo.owner}/${repo.repo} deleted successfully`
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error: any) {
+    console.error('Error deleting repository:', error);
+    return new Response(JSON.stringify({ 
+      success: false,
+      error: error.message || 'Unknown error occurred'
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

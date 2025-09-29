@@ -5,7 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { BarChart3, PieChart as PieChartIcon, RefreshCw, Users, Filter } from 'lucide-react';
+import { BarChart3, PieChart as PieChartIcon, RefreshCw, Users, Filter, Trophy, Medal, Award } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 interface WeeklyData {
   week: string;
@@ -57,6 +59,60 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
   const [loading, setLoading] = useState(false);
   const [fetchingCommits, setFetchingCommits] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<string>('all');
+
+  // Helper function to get ranking medal/icon
+  const getRankingIcon = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return <Trophy className="h-6 w-6 text-yellow-500" />;
+      case 2:
+        return <Medal className="h-6 w-6 text-gray-400" />;
+      case 3:
+        return <Award className="h-6 w-6 text-amber-600" />;
+      default:
+        return <div className="h-6 w-6 flex items-center justify-center text-sm font-bold text-muted-foreground">#{rank}</div>;
+    }
+  };
+
+  // Helper function to get ranking colors
+  const getRankingColors = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return {
+          bg: 'bg-gradient-to-r from-yellow-50 to-yellow-100',
+          border: 'border-yellow-200',
+          text: 'text-yellow-800'
+        };
+      case 2:
+        return {
+          bg: 'bg-gradient-to-r from-gray-50 to-gray-100',
+          border: 'border-gray-200',
+          text: 'text-gray-800'
+        };
+      case 3:
+        return {
+          bg: 'bg-gradient-to-r from-amber-50 to-amber-100',
+          border: 'border-amber-200',
+          text: 'text-amber-800'
+        };
+      default:
+        return {
+          bg: 'bg-gradient-to-r from-blue-50 to-blue-100',
+          border: 'border-blue-200',
+          text: 'text-blue-800'
+        };
+    }
+  };
+
+  // Helper function to generate initials from name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   useEffect(() => {
     if (repositories.length > 0) {
@@ -170,6 +226,9 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
   };
 
   const processChartData = () => {
+    console.log('Processing chart data for commits:', filteredCommits.length);
+    console.log('Sample commits:', filteredCommits.slice(0, 3));
+    
     // Process daily commits (not weekly)
     const dailyCommits: { [key: string]: number } = {};
     const categoryCommits: { [key: string]: number } = {};
@@ -189,16 +248,25 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
       const category = commit.enhanced_category || 'Other';
       categoryCommits[category] = (categoryCommits[category] || 0) + 1;
 
-      // Author data
-      const author = commit.author_name || 'Unknown';
-      authorCommits[author] = (authorCommits[author] || 0) + 1;
+      // Author data - improved handling
+      const authorName = commit.author_name;
+      console.log('Processing author:', authorName, 'Type:', typeof authorName);
       
-      // Author daily data for timeline
-      if (!authorDailyCommits[dateKey]) {
-        authorDailyCommits[dateKey] = {};
+      if (authorName && typeof authorName === 'string' && authorName.trim() !== '') {
+        const cleanAuthor = authorName.trim();
+        if (cleanAuthor !== 'null' && cleanAuthor !== 'undefined') {
+          authorCommits[cleanAuthor] = (authorCommits[cleanAuthor] || 0) + 1;
+          
+          // Author daily data for timeline
+          if (!authorDailyCommits[dateKey]) {
+            authorDailyCommits[dateKey] = {};
+          }
+          authorDailyCommits[dateKey][cleanAuthor] = (authorDailyCommits[dateKey][cleanAuthor] || 0) + 1;
+        }
       }
-      authorDailyCommits[dateKey][author] = (authorDailyCommits[dateKey][author] || 0) + 1;
     });
+
+    console.log('Author commits after processing:', authorCommits);
 
     // Convert to chart format with actual commit dates
     const daily = Object.entries(dailyCommits)
@@ -227,14 +295,33 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
       .sort((a, b) => b.value - a.value);
 
     const authors = Object.entries(authorCommits)
-      .map(([author, count]) => ({
-        author: author && author.trim() ? 
-          (author.length > 20 ? author.substring(0, 20) + '...' : author) : 
-          'Unknown',
-        commits: count,
-      }))
+      .filter(([author, count]) => {
+        console.log('Filtering author:', author, 'with count:', count);
+        return count > 0;
+      })
+      .map(([author, count]) => {
+        const displayName = author && author.trim() && author !== 'null' && author !== 'undefined' ? 
+          (author.length > 25 ? author.substring(0, 22) + '...' : author) : 
+          'Unknown';
+        console.log('Mapping author:', author, 'to display name:', displayName, 'commits:', count);
+        return {
+          author: displayName,
+          commits: count,
+        };
+      })
       .sort((a, b) => b.commits - a.commits)
       .slice(0, 10); // Top 10 authors
+
+    console.log('Final authors array:', authors);
+
+    // If no valid authors found but we have commits, create a fallback entry
+    if (authors.length === 0 && filteredCommits.length > 0) {
+      console.log('No valid authors found, creating fallback');
+      authors.push({
+        author: 'Unknown Contributors',
+        commits: filteredCommits.length
+      });
+    }
 
     // Create author timeline data with cumulative commits (competition style)
     const authorNames = Object.keys(authorCommits).slice(0, 6); // Top 6 authors for line chart
@@ -264,7 +351,8 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
 
     console.log('Raw commit dates sample:', filteredCommits.slice(0, 3).map(c => ({ date: c.commit_date, parsed: new Date(c.commit_date).toLocaleDateString() }))); // Debug log
     console.log('Daily commits breakdown:', dailyCommits); // Debug log
-    console.log('Author data:', authors); // Debug log
+    console.log('Author commits raw:', authorCommits); // Debug log
+    console.log('Author data processed:', authors); // Debug log
     console.log('Filtered commits:', filteredCommits.length); // Debug log
     console.log('Daily commits data:', daily); // Debug log
     console.log('Author timeline:', authorTimeline); // Debug log
@@ -465,33 +553,127 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
           </CardContent>
         </Card>
 
-        {/* Top Contributors Bar Chart */}
+        {/* Top Contributors Leaderboard */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+              <Trophy className="h-5 w-5" />
               Top Contributors
             </CardTitle>
             <CardDescription>
-              Most active contributors by commit count ({authorData.length} contributors found)
+              Leaderboard of most active contributors ({authorData.length} contributors found)
             </CardDescription>
           </CardHeader>
           <CardContent>
             {authorData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={authorData} layout="horizontal" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="author" type="category" width={150} fontSize={12} />
-                  <Tooltip />
-                  <Bar dataKey="commits" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="space-y-3">
+                {authorData.map((author, index) => {
+                  const rank = index + 1;
+                  const colors = getRankingColors(rank);
+                  const initials = getInitials(author.author);
+                  
+                  return (
+                    <div 
+                      key={`${author.author}-${index}`}
+                      className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all hover:shadow-md ${
+                        colors.bg
+                      } ${colors.border}`}
+                    >
+                      <div className="flex items-center space-x-4">
+                        {/* Ranking Icon */}
+                        <div className="flex-shrink-0">
+                          {getRankingIcon(rank)}
+                        </div>
+                        
+                        {/* Profile Avatar */}
+                        <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+                          <AvatarImage 
+                            src={`https://github.com/${author.author}.png`} 
+                            alt={author.author}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                          <AvatarFallback className={`font-semibold ${colors.text} bg-white`}>
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        {/* Author Info */}
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <h4 className={`font-semibold text-lg ${colors.text}`}>
+                              {author.author}
+                            </h4>
+                            {rank <= 3 && (
+                              <Badge 
+                                variant="secondary" 
+                                className={`text-xs ${
+                                  rank === 1 ? 'bg-yellow-100 text-yellow-800' :
+                                  rank === 2 ? 'bg-gray-100 text-gray-800' :
+                                  'bg-amber-100 text-amber-800'
+                                }`}
+                              >
+                                {rank === 1 ? '🥇 Champion' : rank === 2 ? '🥈 Runner-up' : '🥉 Third Place'}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Rank #{rank} • Active contributor
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Commit Count */}
+                      <div className="text-right">
+                        <div className={`text-2xl font-bold ${colors.text}`}>
+                          {author.commits}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {author.commits === 1 ? 'commit' : 'commits'}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {/* Summary Stats */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {authorData.length}
+                      </div>
+                      <div className="text-sm text-gray-600">Contributors</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {authorData.reduce((sum, author) => sum + author.commits, 0)}
+                      </div>
+                      <div className="text-sm text-gray-600">Total Commits</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {Math.round(authorData.reduce((sum, author) => sum + author.commits, 0) / authorData.length)}
+                      </div>
+                      <div className="text-sm text-gray-600">Avg per Contributor</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8">
-                <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium text-muted-foreground">No contributor data available</p>
-                <p className="text-sm text-muted-foreground">Commits need author information to display contributors</p>
+              <div className="flex flex-col items-center justify-center py-12">
+                <Trophy className="h-16 w-16 text-muted-foreground mb-4" />
+                <p className="text-xl font-medium text-muted-foreground mb-2">No contributors found</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Fetch commits from your repositories to see the leaderboard
+                </p>
+                {filteredCommits.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Found {filteredCommits.length} commits but no valid author names
+                  </p>
+                )}
               </div>
             )}
           </CardContent>
