@@ -113,7 +113,7 @@ const Index = () => {
               </div>
               <CardTitle className="text-xl md:text-2xl font-heading">Client Portal</CardTitle>
               <p className="text-muted-foreground text-sm md:text-base">
-                Generate secure project access codes for your freelancers
+                Generate secure project access codes and manage GitHub repositories for your freelancers
               </p>
             </CardHeader>
             <CardContent>
@@ -134,7 +134,7 @@ const Index = () => {
               </div>
               <CardTitle className="text-xl md:text-2xl font-heading">Freelancer Access</CardTitle>
               <p className="text-muted-foreground text-sm md:text-base">
-                Enter your project code to unlock client resources
+                Enter your project code to access client resources and GitHub analytics
               </p>
             </CardHeader>
             <CardContent>
@@ -182,7 +182,7 @@ const Index = () => {
         <Card className="card-glass">
           <CardContent className="p-4 md:p-6 text-center">
             <p className="text-sm md:text-base text-muted-foreground">
-              <span className="gradient-accent font-semibold">Growvo</span> • Secure Freelancer-Client Collaboration • 2-Day Code Expiry • Mobile Optimized
+              <span className="gradient-accent font-semibold">Growvo</span> • Secure Freelancer-Client Collaboration • GitHub Integration • 2-Day Code Expiry • Mobile Optimized
             </p>
           </CardContent>
         </Card>

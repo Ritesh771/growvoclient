@@ -117,6 +117,7 @@ export type Database = {
       }
       project_codes: {
         Row: {
+          allows_freelancer_access: boolean | null
           code: string
           created_at: string
           created_by: string
@@ -128,6 +129,7 @@ export type Database = {
           used_count: number
         }
         Insert: {
+          allows_freelancer_access?: boolean | null
           code: string
           created_at?: string
           created_by: string
@@ -139,6 +141,7 @@ export type Database = {
           used_count?: number
         }
         Update: {
+          allows_freelancer_access?: boolean | null
           code?: string
           created_at?: string
           created_by?: string
@@ -150,6 +153,44 @@ export type Database = {
           used_count?: number
         }
         Relationships: []
+      }
+      otp_verifications: {
+        Row: {
+          code_id: string
+          created_at: string
+          freelancer_identifier: string | null
+          id: string
+          updated_at: string
+          verification_attempts: number | null
+          verified_at: string | null
+        }
+        Insert: {
+          code_id: string
+          created_at?: string
+          freelancer_identifier?: string | null
+          id?: string
+          updated_at?: string
+          verification_attempts?: number | null
+          verified_at?: string | null
+        }
+        Update: {
+          code_id?: string
+          created_at?: string
+          freelancer_identifier?: string | null
+          id?: string
+          updated_at?: string
+          verification_attempts?: number | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "otp_verifications_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "project_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -28,7 +28,7 @@ export const GitHubRepositoryForm: React.FC<GitHubRepositoryFormProps> = ({ onRe
     }
 
     // Validate GitHub URL format
-    const githubUrlPattern = /^https:\/\/github\.com\/[^\/]+\/[^\/]+/;
+    const githubUrlPattern = /^https:\/\/github\.com\/[^/]+\/[^/]+/;
     if (!githubUrlPattern.test(repoUrl)) {
       toast({
         title: "Invalid URL",
@@ -57,12 +57,37 @@ export const GitHubRepositoryForm: React.FC<GitHubRepositoryFormProps> = ({ onRe
           title: "Repository Added",
           description: data.message,
         });
+        
+        // Automatically fetch commits for the new repository
+        if (data.repoId) {
+          try {
+            const { data: commitData, error: commitError } = await supabase.functions.invoke('github-integration', {
+              body: {
+                action: 'fetch-commits',
+                repoId: data.repoId,
+              },
+            });
+
+            if (commitError) {
+              console.error('Error fetching commits:', commitError);
+            } else if (commitData.success) {
+              toast({
+                title: "Commits Fetched",
+                description: `Successfully loaded ${commitData.commits?.length || 0} commits`,
+              });
+            }
+          } catch (commitError) {
+            console.error('Error auto-fetching commits:', commitError);
+            // Don't show error to user as repo was added successfully
+          }
+        }
+        
         setRepoUrl('');
         onRepositoryAdded();
       } else {
         throw new Error(data.error || 'Failed to add repository');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error adding repository:', error);
       toast({
         title: "Error",

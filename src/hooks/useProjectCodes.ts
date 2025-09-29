@@ -31,7 +31,7 @@ export const useProjectCodes = () => {
 
       if (error) throw error;
       setCodes(data || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error loading codes:', error);
       toast({
         title: "Error loading codes",
@@ -69,7 +69,7 @@ export const useProjectCodes = () => {
       });
 
       return data;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error generating code:', error);
       toast({
         title: "Error generating code",
@@ -96,7 +96,7 @@ export const useProjectCodes = () => {
         title: "Code Invalidated",
         description: "Project code has been deactivated",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error invalidating code:', error);
       toast({
         title: "Error invalidating code",
@@ -131,7 +131,7 @@ export const useProjectCodes = () => {
         .eq('id', data.id);
 
       return { valid: true, message: 'Code validated successfully', data };
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error validating code:', error);
       return { valid: false, message: error.message };
     }
@@ -143,7 +143,8 @@ export const useProjectCodes = () => {
 
     loadCodes();
 
-    const channel = supabase
+    // Subscribe to project codes changes
+    const codesChannel = supabase
       .channel('project_codes_changes')
       .on(
         'postgres_changes',
@@ -160,8 +161,27 @@ export const useProjectCodes = () => {
       )
       .subscribe();
 
+    // Subscribe to OTP verifications to get real-time usage updates
+    const verificationsChannel = supabase
+      .channel('otp_verifications_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'otp_verifications'
+        },
+        (payload) => {
+          console.log('New freelancer access:', payload);
+          // Reload codes to update usage counts
+          loadCodes();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(codesChannel);
+      supabase.removeChannel(verificationsChannel);
     };
   }, [user]);
 
