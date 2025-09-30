@@ -1,73 +1,107 @@
-# Welcome to your Lovable project
+# Growvo - Freelancer Project Access Portal
 
-## Project info
+A secure, modern web application for managing freelancer access to client projects. Built with React, TypeScript, and Supabase.
 
-**URL**: https://lovable.dev/projects/457aa051-440a-4bd8-8521-81e2cb19a117
+## Features
 
-## How can I edit this code?
+- **Client Portal**: Generate secure, time-limited project access codes
+- **Freelancer Access**: Enter project codes to access GitHub repositories and analytics
+- **GitHub Integration**: View repository analytics, commit timelines, and project insights
+- **OTP Verification**: Secure authentication with one-time passwords
+- **Mobile Optimized**: Responsive design that works on all devices
+- **Enterprise Security**: Auto-expiring codes and secure access management
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18, TypeScript, Vite
+- **UI Framework**: Tailwind CSS, Shadcn/ui components
+- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
+- **Charts**: Recharts for data visualization
+- **State Management**: React Query for server state
+- **Routing**: React Router DOM
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/457aa051-440a-4bd8-8521-81e2cb19a117) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js 18+
+- npm or yarn
+- Supabase account and project
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Clone the repository:
+```bash
+git clone https://github.com/Ritesh771/growvoclient.git
+cd growvoclient
+```
 
-Follow these steps:
+2. Install dependencies:
+```bash
+npm install
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3. Set up environment variables:
+Create a `.env.local` file in the root directory with your Supabase credentials:
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Build for Production
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Project Structure
 
-## What technologies are used for this project?
+```
+src/
+├── components/          # Reusable UI components
+│   ├── ui/             # Shadcn/ui components
+│   ├── AdminView.tsx   # Client admin interface
+│   ├── DeveloperView.tsx # Freelancer interface
+│   └── ...
+├── contexts/           # React contexts (Auth)
+├── hooks/              # Custom React hooks
+├── integrations/       # External service integrations
+├── lib/                # Utility functions
+├── pages/              # Route components
+└── ...
 
-This project is built with:
+supabase/
+├── config.toml         # Supabase configuration
+├── functions/          # Edge functions
+└── migrations/         # Database migrations
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Database Schema
 
-## How can I deploy this project?
+The application uses Supabase with the following main tables:
+- `project_codes` - Generated access codes
+- `github_repositories` - Linked GitHub repos
+- `otp_verification` - OTP codes for authentication
 
-Simply open [Lovable](https://lovable.dev/projects/457aa051-440a-4bd8-8521-81e2cb19a117) and click on Share -> Publish.
+## Contributing
 
-## Can I connect a custom domain to my Lovable project?
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -am 'Add some feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Submit a pull request
 
-Yes, you can!
+## License
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+This project is private and proprietary.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Support
+
+For support or questions, please contact the development team.

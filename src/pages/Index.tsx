@@ -88,8 +88,12 @@ const Index = () => {
         {/* Hero Header */}
         <div className="text-center mb-12 lg:mb-16">
           <div className="float-animation mb-8">
-            <div className="mx-auto w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center mb-6">
-              <Zap className="h-8 w-8 md:h-10 md:w-10 text-white" />
+            <div className="mx-auto w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center mb-6 overflow-hidden">
+              <img 
+                src="/growvo.png" 
+                alt="Growvo Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
           

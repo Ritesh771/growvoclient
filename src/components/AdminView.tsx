@@ -173,8 +173,12 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
               >
                 <ArrowLeft className="h-5 w-5 text-primary" />
               </Button>
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Zap className="h-6 w-6 text-primary" />
+              <div className="p-2 rounded-lg bg-primary/10 overflow-hidden">
+                <img 
+                  src="/growvo.png" 
+                  alt="Growvo Logo" 
+                  className="h-6 w-6 object-contain"
+                />
               </div>
               <CardTitle className="brand-logo gradient-text text-2xl md:text-3xl">Growvo Client Portal</CardTitle>
             </div>

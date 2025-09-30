@@ -196,8 +196,12 @@ export const FreelancerPortal = ({ codeId, freelancerName, onBack }: FreelancerP
             <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
               <div className="flex items-center gap-3">
                 
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Zap className="h-6 w-6 text-primary" />
+                <div className="p-2 rounded-lg bg-primary/10 overflow-hidden">
+                  <img 
+                    src="/growvo.png" 
+                    alt="Growvo Logo" 
+                    className="h-6 w-6 object-contain"
+                  />
                 </div>
                 <div>
                   <CardTitle className="brand-logo gradient-text text-xl md:text-2xl">

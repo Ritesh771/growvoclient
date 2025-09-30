@@ -119,8 +119,12 @@ export const LoginForm = ({ onLogin }: LoginFormProps) => {
       <Card className="w-full max-w-md card-glass">
         <CardHeader className="text-center">
           <div className="mx-auto mb-6">
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center mb-4">
-              <Zap className="h-8 w-8 md:h-10 md:w-10 text-white" />
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center mb-4 overflow-hidden">
+              <img 
+                src="/growvo.png" 
+                alt="Growvo Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
           <CardTitle className="text-2xl md:text-3xl font-heading gradient-text mb-2">
