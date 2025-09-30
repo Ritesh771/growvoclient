@@ -334,9 +334,7 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
                                 Active
                               </span>
                             )}
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                              Used: {code.used_count}
-                            </span>
+                          
                           </div>
                           <p className="text-sm text-muted-foreground">
                             Generated: {formatDate(code.generated_at)}

@@ -128,10 +128,10 @@ async function addRepository(supabaseClient: any, userId: string, repoUrl: strin
 
 async function fetchCommits(supabaseClient: any, repoId: string) {
   try {
-    // Get repository details
+    // Get repository details including cache metadata
     const { data: repo, error: repoError } = await supabaseClient
       .from('github_repositories')
-      .select('owner, repo')
+      .select('owner, repo, last_fetched_at, last_commit_sha, fetch_status, fetch_count')
       .eq('id', repoId)
       .single();
 
@@ -144,30 +144,91 @@ async function fetchCommits(supabaseClient: any, repoId: string) {
       throw new Error('GitHub token not configured');
     }
 
+    // Check cache validity and rate limiting
+    const now = new Date();
+    const lastFetched = repo.last_fetched_at ? new Date(repo.last_fetched_at) : null;
+    const timeSinceLastFetch = lastFetched ? (now.getTime() - lastFetched.getTime()) / 1000 / 60 : null; // minutes
+
+    // Rate limiting: minimum 5 minutes between fetches
+    const MIN_FETCH_INTERVAL_MINUTES = 5;
+    if (timeSinceLastFetch !== null && timeSinceLastFetch < MIN_FETCH_INTERVAL_MINUTES) {
+      const remainingMinutes = Math.ceil(MIN_FETCH_INTERVAL_MINUTES - timeSinceLastFetch);
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Rate limited. Please wait ${remainingMinutes} minutes before fetching again.`,
+        rateLimited: true,
+        nextFetchAt: new Date(now.getTime() + remainingMinutes * 60 * 1000).toISOString(),
+        lastFetchedAt: repo.last_fetched_at,
+        fetchStatus: 'rate_limited'
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Determine fetch strategy
+    let apiUrl = `https://api.github.com/repos/${repo.owner}/${repo.repo}/commits?per_page=100`;
+    let isIncremental = false;
+
+    if (repo.last_commit_sha && repo.fetch_status === 'success') {
+      // Incremental fetch: only get commits newer than the last stored commit
+      apiUrl += `&sha=${repo.last_commit_sha}`;
+      isIncremental = true;
+      console.log('Performing incremental fetch for commits newer than:', repo.last_commit_sha);
+    }
+
+    console.log('Fetching commits from:', apiUrl);
+
     // Fetch commits from GitHub API
-    const response = await fetch(
-      `https://api.github.com/repos/${repo.owner}/${repo.repo}/commits?per_page=100`,
-      {
-        headers: {
-          'Authorization': `Bearer ${githubToken}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'Supabase-Function',
-        },
-      }
-    );
+    const response = await fetch(apiUrl, {
+      headers: {
+        'Authorization': `Bearer ${githubToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'Supabase-Function',
+      },
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
+      let errorMessage = `GitHub API error: ${response.status} - ${errorText}`;
+
+      // Handle rate limiting from GitHub
+      if (response.status === 403) {
+        const rateLimitReset = response.headers.get('X-RateLimit-Reset');
+        if (rateLimitReset) {
+          const resetTime = new Date(parseInt(rateLimitReset) * 1000);
+          errorMessage = `GitHub API rate limit exceeded. Resets at ${resetTime.toISOString()}`;
+        }
+      }
+
+      // Update repository with error status
+      await supabaseClient
+        .from('github_repositories')
+        .update({
+          fetch_status: 'error',
+          last_error_message: errorMessage,
+          updated_at: now.toISOString()
+        })
+        .eq('id', repoId);
+
+      throw new Error(errorMessage);
     }
 
     const commits = await response.json();
+    console.log(`Fetched ${commits.length} commits from GitHub API`);
 
     // Process and store commits
     const processedCommits = [];
+    let latestCommitSha = repo.last_commit_sha;
+
     for (const commit of commits) {
+      // Skip commits we've already processed (for incremental fetches)
+      if (isIncremental && commit.sha === repo.last_commit_sha) {
+        continue;
+      }
+
       const category = categorizeCommit(commit.commit.message);
-      
+
       const commitData = {
         repo_id: repoId,
         sha: commit.sha,
@@ -188,13 +249,46 @@ async function fetchCommits(supabaseClient: any, repoId: string) {
 
       if (!error) {
         processedCommits.push(commitData);
+        // Track the latest commit SHA (first commit in array is most recent)
+        if (!latestCommitSha || commits.indexOf(commit) === 0) {
+          latestCommitSha = commit.sha;
+        }
       }
     }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: `Processed ${processedCommits.length} commits`,
-      commits: processedCommits 
+    // Update repository cache metadata
+    const updateData: any = {
+      last_fetched_at: now.toISOString(),
+      fetch_status: 'success',
+      last_error_message: null,
+      fetch_count: (repo.fetch_count || 0) + 1,
+      updated_at: now.toISOString()
+    };
+
+    // Update last_commit_sha if we found newer commits
+    if (latestCommitSha && latestCommitSha !== repo.last_commit_sha) {
+      updateData.last_commit_sha = latestCommitSha;
+    }
+
+    await supabaseClient
+      .from('github_repositories')
+      .update(updateData)
+      .eq('id', repoId);
+
+    const fetchType = isIncremental ? 'incremental' : 'full';
+    const message = isIncremental
+      ? `Processed ${processedCommits.length} new commits (incremental update)`
+      : `Processed ${processedCommits.length} commits (full fetch)`;
+
+    return new Response(JSON.stringify({
+      success: true,
+      message,
+      commits: processedCommits,
+      fetchType,
+      isIncremental,
+      lastFetchedAt: now.toISOString(),
+      newCommitsCount: processedCommits.length,
+      totalCommitsInRepo: await getCommitCount(supabaseClient, repoId)
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -211,7 +305,7 @@ async function getRepositories(supabaseClient: any, userId: string) {
   try {
     const { data: repositories, error } = await supabaseClient
       .from('github_repositories')
-      .select('*')
+      .select('id, user_id, owner, repo, repo_url, created_at, updated_at, last_fetched_at, last_commit_sha, fetch_status, last_error_message, fetch_count')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
@@ -308,5 +402,24 @@ function categorizeCommit(message: string): string {
     return 'Chore';
   } else {
     return 'Other';
+  }
+}
+
+async function getCommitCount(supabaseClient: any, repoId: string): Promise<number> {
+  try {
+    const { count, error } = await supabaseClient
+      .from('github_commits')
+      .select('*', { count: 'exact', head: true })
+      .eq('repo_id', repoId);
+
+    if (error) {
+      console.error('Error counting commits:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error in getCommitCount:', error);
+    return 0;
   }
 }

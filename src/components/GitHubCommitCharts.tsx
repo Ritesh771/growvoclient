@@ -33,6 +33,14 @@ interface Repository {
   id: string;
   owner: string;
   repo: string;
+  repo_url: string;
+  created_at: string;
+  updated_at: string;
+  last_fetched_at: string | null;
+  last_commit_sha: string | null;
+  fetch_status: string | null;
+  last_error_message: string | null;
+  fetch_count: number | null;
 }
 
 interface CommitWithRepo extends Commit {
@@ -57,6 +65,13 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
   const [authorData, setAuthorData] = useState<AuthorData[]>([]);
   const [authorTimelineData, setAuthorTimelineData] = useState<AuthorTimelineData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [cacheStatus, setCacheStatus] = useState<{[repoId: string]: {
+    lastFetchedAt: string | null;
+    fetchStatus: string | null;
+    fetchCount: number | null;
+    errorMessage: string | null;
+    nextFetchAt: string | null;
+  }}>({});
   const [fetchingCommits, setFetchingCommits] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<string>('all');
 
@@ -114,9 +129,24 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
       .slice(0, 2);
   };
 
+  const loadCacheStatus = () => {
+    const status: {[repoId: string]: any} = {};
+    repositories.forEach(repo => {
+      status[repo.id] = {
+        lastFetchedAt: repo.last_fetched_at,
+        fetchStatus: repo.fetch_status,
+        fetchCount: repo.fetch_count,
+        errorMessage: repo.last_error_message,
+        nextFetchAt: null
+      };
+    });
+    setCacheStatus(status);
+  };
+
   useEffect(() => {
     if (repositories.length > 0) {
       loadAllCommits();
+      loadCacheStatus();
       // Set default selected repo to the first one if only one repo, otherwise keep 'all'
       if (repositories.length === 1 && selectedRepo === 'all') {
         setSelectedRepo(repositories[0].id);
@@ -129,6 +159,7 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
       setCategoryData([]);
       setAuthorData([]);
       setSelectedRepo('all');
+      setCacheStatus({});
     }
   }, [repositories]);
 
@@ -188,7 +219,7 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
   const fetchCommitsFromGitHub = async () => {
     try {
       setFetchingCommits(true);
-      
+
       for (const repo of repositories) {
         const { data, error } = await supabase.functions.invoke('github-integration', {
           body: {
@@ -202,14 +233,52 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
         }
 
         if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch commits');
-        }
-      }
+          if (data.rateLimited) {
+            // Handle rate limiting
+            setCacheStatus(prev => ({
+              ...prev,
+              [repo.id]: {
+                lastFetchedAt: data.lastFetchedAt,
+                fetchStatus: 'rate_limited',
+                fetchCount: prev[repo.id]?.fetchCount || 0,
+                errorMessage: data.error,
+                nextFetchAt: data.nextFetchAt
+              }
+            }));
 
-      toast({
-        title: "Commits updated!",
-        description: "Successfully fetched latest commits from GitHub",
-      });
+            toast({
+              title: "Rate Limited",
+              description: data.error,
+              variant: "destructive",
+            });
+            continue;
+          } else {
+            throw new Error(data.error || 'Failed to fetch commits');
+          }
+        }
+
+        // Update cache status with successful fetch
+        setCacheStatus(prev => ({
+          ...prev,
+          [repo.id]: {
+            lastFetchedAt: data.lastFetchedAt,
+            fetchStatus: 'success',
+            fetchCount: (prev[repo.id]?.fetchCount || 0) + 1,
+            errorMessage: null,
+            nextFetchAt: null
+          }
+        }));
+
+        const fetchType = data.fetchType || 'unknown';
+        const message = data.isIncremental
+          ? `Fetched ${data.newCommitsCount} new commits for ${repo.owner}/${repo.repo}`
+          : `Fetched ${data.newCommitsCount} commits for ${repo.owner}/${repo.repo} (${fetchType})`;
+
+        toast({
+          title: "Commits updated!",
+          description: message,
+        });
+      }
 
       // Reload commits after fetching
       await loadAllCommits();
@@ -472,26 +541,53 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
               </SelectContent>
             </Select>
           </div>
+
+          {/* Cache Status Indicator */}
+          {selectedRepo !== 'all' && cacheStatus[selectedRepo] && (
+            <div className="flex items-center gap-2 text-sm">
+              <div className={`w-2 h-2 rounded-full ${
+                cacheStatus[selectedRepo].fetchStatus === 'success' ? 'bg-green-500' :
+                cacheStatus[selectedRepo].fetchStatus === 'error' ? 'bg-red-500' :
+                cacheStatus[selectedRepo].fetchStatus === 'rate_limited' ? 'bg-yellow-500' :
+                'bg-gray-400'
+              }`} />
+              <span className="text-muted-foreground">
+                {cacheStatus[selectedRepo].lastFetchedAt
+                  ? `Updated ${new Date(cacheStatus[selectedRepo].lastFetchedAt).toLocaleString()}`
+                  : 'Never fetched'
+                }
+              </span>
+            </div>
+          )}
         </div>
         
-        <Button 
-          onClick={fetchCommitsFromGitHub} 
-          disabled={fetchingCommits}
-          variant="outline"
-          size="sm"
-        >
-          {fetchingCommits ? (
-            <>
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-2" />
-              Updating...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="h-3 w-3 mr-2" />
-              Refresh Data
-            </>
+        <div className="flex flex-col items-end gap-2">
+          {selectedRepo !== 'all' && cacheStatus[selectedRepo]?.fetchStatus === 'rate_limited' && (
+            <div className="text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+              Rate limited until {cacheStatus[selectedRepo]?.nextFetchAt ? 
+                new Date(cacheStatus[selectedRepo].nextFetchAt).toLocaleTimeString() : 'later'}
+            </div>
           )}
-        </Button>
+          
+          <Button 
+            onClick={fetchCommitsFromGitHub} 
+            disabled={fetchingCommits || (selectedRepo !== 'all' && cacheStatus[selectedRepo]?.fetchStatus === 'rate_limited')}
+            variant="outline"
+            size="sm"
+          >
+            {fetchingCommits ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-2" />
+                Updating...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-3 w-3 mr-2" />
+                Refresh Data
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

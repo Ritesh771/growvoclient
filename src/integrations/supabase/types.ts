@@ -61,7 +61,12 @@ export type Database = {
       github_repositories: {
         Row: {
           created_at: string
+          fetch_count: number | null
+          fetch_status: string | null
           id: string
+          last_commit_sha: string | null
+          last_error_message: string | null
+          last_fetched_at: string | null
           owner: string
           repo: string
           repo_url: string
@@ -70,7 +75,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          fetch_count?: number | null
+          fetch_status?: string | null
           id?: string
+          last_commit_sha?: string | null
+          last_error_message?: string | null
+          last_fetched_at?: string | null
           owner: string
           repo: string
           repo_url: string
@@ -79,7 +89,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          fetch_count?: number | null
+          fetch_status?: string | null
           id?: string
+          last_commit_sha?: string | null
+          last_error_message?: string | null
+          last_fetched_at?: string | null
           owner?: string
           repo?: string
           repo_url?: string
