@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
@@ -196,15 +197,20 @@ export const FreelancerAccess = ({ onAccessGranted }: FreelancerAccessProps) => 
                   <Label htmlFor="freelancer-name" className="text-sm font-medium">
                     Your Name
                   </Label>
-                  <Input
-                    id="freelancer-name"
-                    type="text"
-                    placeholder="Enter your name"
-                    value={freelancerName}
-                    onChange={(e) => setFreelancerName(e.target.value)}
-                    className="bg-background/50 border-border/50 focus:border-accent text-sm md:text-base"
-                    disabled={isLoading}
-                  />
+                  <Select value={freelancerName} onValueChange={setFreelancerName} disabled={isLoading}>
+                    <SelectTrigger className="bg-background/50 border-border/50 focus:border-accent text-sm md:text-base">
+                      <SelectValue placeholder="Select your name" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Ritesh N">Ritesh N</SelectItem>
+                      <SelectItem value="Pannaga JA">Pannaga JA</SelectItem>
+                      <SelectItem value="Shashank GS">Shashank GS</SelectItem>
+                      <SelectItem value="Ruthu Parinika">Ruthu Parinika</SelectItem>
+                      <SelectItem value="Praveen V">Praveen V</SelectItem>
+                      <SelectItem value="Vignesh SD">Vignesh SD</SelectItem>
+                      <SelectItem value="Raghuveer P">Raghuveer P</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">

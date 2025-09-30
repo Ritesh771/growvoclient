@@ -511,8 +511,8 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
   return (
     <div className="space-y-6">
       {/* Header with Repository Filter and Refresh Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <div>
             <h3 className="text-lg font-semibold">Commit Analytics</h3>
             <p className="text-sm text-muted-foreground">
@@ -525,45 +525,47 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
           </div>
           
           {/* Repository Filter */}
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={selectedRepo} onValueChange={setSelectedRepo}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select repository" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Repositories</SelectItem>
-                {repositories.map((repo) => (
-                  <SelectItem key={repo.id} value={repo.id}>
-                    {repo.owner}/{repo.repo}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Cache Status Indicator */}
-          {selectedRepo !== 'all' && cacheStatus[selectedRepo] && (
-            <div className="flex items-center gap-2 text-sm">
-              <div className={`w-2 h-2 rounded-full ${
-                cacheStatus[selectedRepo].fetchStatus === 'success' ? 'bg-green-500' :
-                cacheStatus[selectedRepo].fetchStatus === 'error' ? 'bg-red-500' :
-                cacheStatus[selectedRepo].fetchStatus === 'rate_limited' ? 'bg-yellow-500' :
-                'bg-gray-400'
-              }`} />
-              <span className="text-muted-foreground">
-                {cacheStatus[selectedRepo].lastFetchedAt
-                  ? `Updated ${new Date(cacheStatus[selectedRepo].lastFetchedAt).toLocaleString()}`
-                  : 'Never fetched'
-                }
-              </span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={selectedRepo} onValueChange={setSelectedRepo}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Select repository" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Repositories</SelectItem>
+                  {repositories.map((repo) => (
+                    <SelectItem key={repo.id} value={repo.id}>
+                      {repo.owner}/{repo.repo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+
+            {/* Cache Status Indicator */}
+            {selectedRepo !== 'all' && cacheStatus[selectedRepo] && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className={`w-2 h-2 rounded-full ${
+                  cacheStatus[selectedRepo].fetchStatus === 'success' ? 'bg-green-500' :
+                  cacheStatus[selectedRepo].fetchStatus === 'error' ? 'bg-red-500' :
+                  cacheStatus[selectedRepo].fetchStatus === 'rate_limited' ? 'bg-yellow-500' :
+                  'bg-gray-400'
+                }`} />
+                <span className="text-muted-foreground text-xs sm:text-sm">
+                  {cacheStatus[selectedRepo].lastFetchedAt
+                    ? `Updated ${new Date(cacheStatus[selectedRepo].lastFetchedAt).toLocaleString()}`
+                    : 'Never fetched'
+                  }
+                </span>
+              </div>
+            )}
+          </div>
         </div>
         
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col gap-2">
           {selectedRepo !== 'all' && cacheStatus[selectedRepo]?.fetchStatus === 'rate_limited' && (
-            <div className="text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+            <div className="text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded w-fit">
               Rate limited until {cacheStatus[selectedRepo]?.nextFetchAt ? 
                 new Date(cacheStatus[selectedRepo].nextFetchAt).toLocaleTimeString() : 'later'}
             </div>
@@ -574,6 +576,7 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
             disabled={fetchingCommits || (selectedRepo !== 'all' && cacheStatus[selectedRepo]?.fetchStatus === 'rate_limited')}
             variant="outline"
             size="sm"
+            className="w-fit"
           >
             {fetchingCommits ? (
               <>
@@ -699,12 +702,12 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
                         }`} />
                       )}
                       
-                      <div className="relative p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-5">
+                      <div className="relative p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
                             {/* Ranking Badge */}
                             <div className="flex-shrink-0">
-                              <div className={`flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg shadow-lg ${
+                              <div className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold text-sm sm:text-lg shadow-lg ${
                                 rank === 1 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' :
                                 rank === 2 ? 'bg-gradient-to-r from-slate-400 to-slate-500 text-white' :
                                 rank === 3 ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-white' :
@@ -719,9 +722,9 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
                             </div>
                             
                             {/* Profile Section */}
-                            <div className="flex items-center space-x-4">
-                              <div className="relative">
-                                <Avatar className="h-16 w-16 border-4 border-white shadow-lg ring-2 ring-slate-100">
+                            <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                              <div className="relative flex-shrink-0">
+                                <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-4 border-white shadow-lg ring-2 ring-slate-100">
                                   <AvatarImage 
                                     src={`https://github.com/${author.author}.png`} 
                                     alt={author.author}
@@ -730,14 +733,14 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
                                       target.style.display = 'none';
                                     }}
                                   />
-                                  <AvatarFallback className={`font-bold text-lg ${
+                                  <AvatarFallback className={`font-bold text-sm sm:text-lg ${
                                     isTopThree ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'bg-slate-200 text-slate-700'
                                   }`}>
                                     {initials}
                                   </AvatarFallback>
                                 </Avatar>
                                 {isTopThree && (
-                                  <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                                  <div className={`absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs ${
                                     rank === 1 ? 'bg-yellow-500' :
                                     rank === 2 ? 'bg-slate-500' :
                                     'bg-amber-500'
@@ -747,17 +750,17 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
                                 )}
                               </div>
                               
-                              <div className="flex-1">
-                                <h4 className={`font-bold text-xl mb-1 ${
+                              <div className="flex-1 min-w-0">
+                                <h4 className={`font-bold text-lg sm:text-xl mb-1 truncate ${
                                   isTopThree ? 'text-slate-800' : 'text-slate-700'
                                 }`}>
                                   {author.author}
                                 </h4>
-                                <div className="flex items-center space-x-2">
+                                <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                                   {isTopThree && (
                                     <Badge 
                                       variant="secondary" 
-                                      className={`text-xs font-medium px-3 py-1 ${
+                                      className={`text-xs font-medium px-2 sm:px-3 py-1 ${
                                         rank === 1 ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
                                         rank === 2 ? 'bg-slate-100 text-slate-800 border-slate-200' :
                                         'bg-amber-100 text-amber-800 border-amber-200'
@@ -766,7 +769,7 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
                                       {rank === 1 ? '🏆 Champion' : rank === 2 ? '🥈 Elite' : '🥉 Expert'}
                                     </Badge>
                                   )}
-                                  <span className="text-sm text-slate-500">
+                                  <span className="text-xs sm:text-sm text-slate-500">
                                     {rank <= 3 ? 'Top Contributor' : 'Active Developer'}
                                   </span>
                                 </div>
@@ -775,18 +778,18 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
                           </div>
                           
                           {/* Commit Stats */}
-                          <div className="text-right">
-                            <div className={`text-3xl font-bold mb-1 ${
+                          <div className="text-right flex-shrink-0">
+                            <div className={`text-2xl sm:text-3xl font-bold mb-1 ${
                               isTopThree ? 'text-slate-800' : 'text-slate-700'
                             }`}>
                               {author.commits}
                             </div>
-                            <div className="text-sm text-slate-500 font-medium">
+                            <div className="text-xs sm:text-sm text-slate-500 font-medium">
                               {author.commits === 1 ? 'commit' : 'commits'}
                             </div>
                             {/* Progress bar for top 3 */}
                             {isTopThree && (
-                              <div className="w-24 h-2 bg-slate-200 rounded-full mt-2 overflow-hidden">
+                              <div className="w-20 sm:w-24 h-2 bg-slate-200 rounded-full mt-2 overflow-hidden">
                                 <div 
                                   className={`h-full rounded-full transition-all duration-1000 ${
                                     rank === 1 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
@@ -805,36 +808,36 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
                 })}
                 
                 {/* Enhanced Summary Stats */}
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Users className="h-6 w-6 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800">Contributors</span>
+                <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border border-blue-100">
+                    <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
+                      <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                      <span className="text-xs sm:text-sm font-medium text-blue-800">Contributors</span>
                     </div>
-                    <div className="text-3xl font-bold text-blue-900">{authorData.length}</div>
-                    <div className="text-sm text-blue-600 mt-1">Active team members</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-blue-900">{authorData.length}</div>
+                    <div className="text-xs sm:text-sm text-blue-600 mt-1">Active team members</div>
                   </div>
                   
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <BarChart3 className="h-6 w-6 text-green-600" />
-                      <span className="text-sm font-medium text-green-800">Total Commits</span>
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 sm:p-6 border border-green-100">
+                    <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
+                      <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                      <span className="text-xs sm:text-sm font-medium text-green-800">Total Commits</span>
                     </div>
-                    <div className="text-3xl font-bold text-green-900">
+                    <div className="text-2xl sm:text-3xl font-bold text-green-900">
                       {authorData.reduce((sum, author) => sum + author.commits, 0)}
                     </div>
-                    <div className="text-sm text-green-600 mt-1">Code contributions</div>
+                    <div className="text-xs sm:text-sm text-green-600 mt-1">Code contributions</div>
                   </div>
                   
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Trophy className="h-6 w-6 text-purple-600" />
-                      <span className="text-sm font-medium text-purple-800">Average</span>
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 sm:p-6 border border-purple-100">
+                    <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
+                      <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
+                      <span className="text-xs sm:text-sm font-medium text-purple-800">Average</span>
                     </div>
-                    <div className="text-3xl font-bold text-purple-900">
+                    <div className="text-2xl sm:text-3xl font-bold text-purple-900">
                       {Math.round(authorData.reduce((sum, author) => sum + author.commits, 0) / authorData.length)}
                     </div>
-                    <div className="text-sm text-purple-600 mt-1">Commits per contributor</div>
+                    <div className="text-xs sm:text-sm text-purple-600 mt-1">Commits per contributor</div>
                   </div>
                 </div>
               </div>

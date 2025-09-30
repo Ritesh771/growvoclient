@@ -16,6 +16,12 @@ interface Repository {
   repo: string;
   repo_url: string;
   created_at: string;
+  updated_at: string;
+  last_fetched_at: string | null;
+  last_commit_sha: string | null;
+  fetch_status: string | null;
+  last_error_message: string | null;
+  fetch_count: number | null;
 }
 
 export const GitHubDashboard: React.FC = () => {
@@ -152,23 +158,27 @@ export const GitHubDashboard: React.FC = () => {
       ) : (
         /* Show tabs when repositories exist */
         <Tabs defaultValue="timeline" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <TabsList>
-              <TabsTrigger value="timeline" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Timeline
+          <div className="flex flex-col gap-4">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto p-1">
+              <TabsTrigger value="timeline" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Timeline</span>
+                <span className="xs:hidden">Time</span>
               </TabsTrigger>
-              <TabsTrigger value="charts" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Analytics
+              <TabsTrigger value="charts" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Analytics</span>
+                <span className="xs:hidden">Charts</span>
               </TabsTrigger>
-              <TabsTrigger value="manage" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Manage Repositories
+              <TabsTrigger value="manage" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Manage</span>
+                <span className="xs:hidden">Repos</span>
               </TabsTrigger>
-              <TabsTrigger value="add-repo" className="flex items-center gap-2">
-                <GitBranch className="h-4 w-4" />
-                Add Repository
+              <TabsTrigger value="add-repo" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <GitBranch className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Add Repo</span>
+                <span className="xs:hidden">Add</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -195,14 +205,14 @@ export const GitHubDashboard: React.FC = () => {
               <CardContent>
                 <div className="space-y-4">
                   {repositories.map((repo) => (
-                    <div key={repo.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center space-x-4">
-                        <div className="bg-blue-100 p-2 rounded-lg">
+                    <div key={repo.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center space-x-4 flex-1 min-w-0">
+                        <div className="bg-blue-100 p-2 rounded-lg flex-shrink-0">
                           <GitBranch className="h-5 w-5 text-blue-600" />
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-lg">{repo.owner}/{repo.repo}</h4>
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-lg truncate">{repo.owner}/{repo.repo}</h4>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               Added {new Date(repo.created_at).toLocaleDateString()}
@@ -210,20 +220,23 @@ export const GitHubDashboard: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(repo.repo_url, '_blank')}
+                          className="w-full sm:w-auto"
                         >
                           <ExternalLink className="h-4 w-4 mr-1" />
-                          View on GitHub
+                          <span className="hidden sm:inline">View on GitHub</span>
+                          <span className="sm:hidden">View</span>
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
+                            <Button variant="destructive" size="sm" className="w-full sm:w-auto">
                               <Trash2 className="h-4 w-4 mr-1" />
-                              Delete
+                              <span className="hidden sm:inline">Delete</span>
+                              <span className="sm:hidden">Remove</span>
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>

@@ -14,6 +14,12 @@ interface Repository {
   repo: string;
   repo_url: string;
   created_at: string;
+  updated_at: string;
+  last_fetched_at: string | null;
+  last_commit_sha: string | null;
+  fetch_status: string | null;
+  last_error_message: string | null;
+  fetch_count: number | null;
 }
 
 interface ProjectCode {
@@ -40,6 +46,13 @@ export const FreelancerPortal = ({ codeId, freelancerName, onBack }: FreelancerP
   const [projectCode, setProjectCode] = useState<ProjectCode | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState<string>('');
+  const [cacheStatus, setCacheStatus] = useState<{[repoId: string]: {
+    lastFetchedAt: string | null;
+    fetchStatus: string | null;
+    fetchCount: number | null;
+    errorMessage: string | null;
+    nextFetchAt: string | null;
+  }}>({});
 
   useEffect(() => {
     loadProjectData();
@@ -91,21 +104,22 @@ export const FreelancerPortal = ({ codeId, freelancerName, onBack }: FreelancerP
 
       setProjectCode(codeData);
 
-      // Get repositories associated with this project/user
-      const { data: repoData, error: repoError } = await supabase
-        .from('github_repositories')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Get repositories associated with this project/user (only repositories owned by the code creator)
+      const { data: repoData, error: repoError } = await supabase.functions.invoke('freelancer-access', {
+        body: {
+          action: 'get-repositories',
+          codeId: codeId,
+        },
+      });
 
       if (repoError) {
-        console.error('Error loading repositories:', repoError);
-        toast({
-          title: "Warning",
-          description: "Could not load repository data",
-          variant: "destructive",
-        });
+        throw repoError;
+      }
+
+      if (repoData.success) {
+        setRepositories(repoData.repositories || []);
       } else {
-        setRepositories(repoData || []);
+        throw new Error(repoData.error || 'Failed to load repositories');
       }
 
     } catch (error) {
@@ -119,6 +133,32 @@ export const FreelancerPortal = ({ codeId, freelancerName, onBack }: FreelancerP
       setLoading(false);
     }
   };
+
+  const loadCacheStatus = () => {
+    const status: {[repoId: string]: {
+      lastFetchedAt: string | null;
+      fetchStatus: string | null;
+      fetchCount: number | null;
+      errorMessage: string | null;
+      nextFetchAt: string | null;
+    }} = {};
+    repositories.forEach(repo => {
+      status[repo.id] = {
+        lastFetchedAt: repo.last_fetched_at,
+        fetchStatus: repo.fetch_status,
+        fetchCount: repo.fetch_count,
+        errorMessage: repo.last_error_message,
+        nextFetchAt: null
+      };
+    });
+    setCacheStatus(status);
+  };
+
+  useEffect(() => {
+    if (repositories.length > 0) {
+      loadCacheStatus();
+    }
+  }, [repositories]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -155,14 +195,7 @@ export const FreelancerPortal = ({ codeId, freelancerName, onBack }: FreelancerP
           <Card className="card-glass">
             <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
               <div className="flex items-center gap-3">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={onBack}
-                  className="p-2 hover:bg-primary/10 transition-colors"
-                >
-                  <ArrowLeft className="h-5 w-5 text-primary" />
-                </Button>
+                
                 <div className="p-2 rounded-lg bg-primary/10">
                   <Zap className="h-6 w-6 text-primary" />
                 </div>
@@ -221,6 +254,39 @@ export const FreelancerPortal = ({ codeId, freelancerName, onBack }: FreelancerP
                   </p>
                 </div>
               </div>
+              
+              {/* Cache Status */}
+              {repositories.length > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <h4 className="text-sm font-medium mb-3">Data Freshness Status</h4>
+                  <div className="space-y-2">
+                    {repositories.map((repo) => {
+                      const status = cacheStatus[repo.id];
+                      if (!status) return null;
+                      
+                      return (
+                        <div key={repo.id} className="flex items-center justify-between text-xs">
+                          <span className="font-medium truncate mr-2">{repo.owner}/{repo.repo}</span>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className={`w-2 h-2 rounded-full ${
+                              status.fetchStatus === 'success' ? 'bg-green-500' :
+                              status.fetchStatus === 'error' ? 'bg-red-500' :
+                              status.fetchStatus === 'rate_limited' ? 'bg-yellow-500' :
+                              'bg-gray-400'
+                            }`} />
+                            <span className="text-muted-foreground">
+                              {status.lastFetchedAt
+                                ? `Updated ${new Date(status.lastFetchedAt).toLocaleDateString()}`
+                                : 'Never updated'
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

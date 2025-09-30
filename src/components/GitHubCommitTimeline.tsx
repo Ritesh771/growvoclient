@@ -217,23 +217,27 @@ export const GitHubCommitTimeline: React.FC<GitHubCommitTimelineProps> = ({ repo
                     <div className="flex gap-4">
                       <div className={`w-6 h-6 rounded-full ${getCategoryColor(commit.enhanced_category)} flex-shrink-0 relative z-10`} />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
+                            <p className="text-sm font-medium text-foreground break-words">
                               {commit.message}
                             </p>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                              <User className="h-3 w-3" />
-                              <span>{commit.author_name}</span>
-                              <Calendar className="h-3 w-3 ml-2" />
-                              <span>{formatDate(commit.commit_date)}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                <span className="truncate">{commit.author_name}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                <span>{formatDate(commit.commit_date)}</span>
+                              </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <Badge variant="secondary" className="text-xs">
+                          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:flex-shrink-0">
+                            <Badge variant="secondary" className="text-xs w-fit">
                               {commit.enhanced_category}
                             </Badge>
-                            <code className="text-xs bg-muted px-2 py-1 rounded">
+                            <code className="text-xs bg-muted px-2 py-1 rounded break-all sm:break-normal">
                               {commit.sha.substring(0, 7)}
                             </code>
                           </div>
