@@ -1,4 +1,10 @@
-export type Json =
+[?25l[?2004h
+                                                                                         
+  >  1. wvdlfhkvebcedmshaeph [name: growvo, org: tuhqybmaioliuxbdlqgx, region: us-east-2]
+                                                                                         
+                                                                                         
+    ↑/k up • ↓/j down • / filter • q quit • ? more                                       
+                                                                                         [6A [J[2K[?2004l[?25h[?1002l[?1003l[?1006lexport type Json =
   | string
   | number
   | boolean
@@ -14,199 +20,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      github_commits: {
-        Row: {
-          author_email: string | null
-          author_name: string
-          commit_date: string
-          created_at: string
-          enhanced_category: string | null
-          id: string
-          message: string
-          repo_id: string
-          sha: string
-        }
-        Insert: {
-          author_email?: string | null
-          author_name: string
-          commit_date: string
-          created_at?: string
-          enhanced_category?: string | null
-          id?: string
-          message: string
-          repo_id: string
-          sha: string
-        }
-        Update: {
-          author_email?: string | null
-          author_name?: string
-          commit_date?: string
-          created_at?: string
-          enhanced_category?: string | null
-          id?: string
-          message?: string
-          repo_id?: string
-          sha?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "github_commits_repo_id_fkey"
-            columns: ["repo_id"]
-            isOneToOne: false
-            referencedRelation: "github_repositories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      github_repositories: {
-        Row: {
-          created_at: string
-          fetch_count: number | null
-          fetch_status: string | null
-          id: string
-          last_commit_sha: string | null
-          last_error_message: string | null
-          last_fetched_at: string | null
-          owner: string
-          repo: string
-          repo_url: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          fetch_count?: number | null
-          fetch_status?: string | null
-          id?: string
-          last_commit_sha?: string | null
-          last_error_message?: string | null
-          last_fetched_at?: string | null
-          owner: string
-          repo: string
-          repo_url: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          fetch_count?: number | null
-          fetch_status?: string | null
-          id?: string
-          last_commit_sha?: string | null
-          last_error_message?: string | null
-          last_fetched_at?: string | null
-          owner?: string
-          repo?: string
-          repo_url?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          role: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          role?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          role?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      project_codes: {
-        Row: {
-          allows_freelancer_access: boolean | null
-          code: string
-          created_at: string
-          created_by: string
-          expires_at: string
-          generated_at: string
-          id: string
-          is_active: boolean
-          updated_at: string
-          used_count: number
-        }
-        Insert: {
-          allows_freelancer_access?: boolean | null
-          code: string
-          created_at?: string
-          created_by: string
-          expires_at: string
-          generated_at?: string
-          id?: string
-          is_active?: boolean
-          updated_at?: string
-          used_count?: number
-        }
-        Update: {
-          allows_freelancer_access?: boolean | null
-          code?: string
-          created_at?: string
-          created_by?: string
-          expires_at?: string
-          generated_at?: string
-          id?: string
-          is_active?: boolean
-          updated_at?: string
-          used_count?: number
-        }
-        Relationships: []
-      }
-      otp_verifications: {
-        Row: {
-          code_id: string
-          created_at: string
-          freelancer_identifier: string | null
-          id: string
-          updated_at: string
-          verification_attempts: number | null
-          verified_at: string | null
-        }
-        Insert: {
-          code_id: string
-          created_at?: string
-          freelancer_identifier?: string | null
-          id?: string
-          updated_at?: string
-          verification_attempts?: number | null
-          verified_at?: string | null
-        }
-        Update: {
-          code_id?: string
-          created_at?: string
-          freelancer_identifier?: string | null
-          id?: string
-          updated_at?: string
-          verification_attempts?: number | null
-          verified_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "otp_verifications_code_id_fkey"
-            columns: ["code_id"]
-            isOneToOne: false
-            referencedRelation: "project_codes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
