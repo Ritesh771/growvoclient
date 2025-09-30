@@ -55,9 +55,10 @@ interface Commit {
 
 interface GitHubCommitChartsProps {
   repositories: Repository[];
+  codeId?: string; // Optional prop for freelancer access
 }
 
-export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ repositories }) => {
+export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ repositories, codeId }) => {
   const [allCommits, setAllCommits] = useState<CommitWithRepo[]>([]);
   const [filteredCommits, setFilteredCommits] = useState<CommitWithRepo[]>([]);
   const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
@@ -192,17 +193,73 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
     try {
       setLoading(true);
       const repoIds = repositories.map(repo => repo.id);
-      const { data, error } = await supabase
-        .from('github_commits')
-        .select('commit_date, enhanced_category, author_name, repo_id')
-        .in('repo_id', repoIds)
-        .order('commit_date', { ascending: false });
+      console.log('Loading commits for repo IDs:', repoIds);
+      console.log('Repository objects:', repositories);
+      console.log('Code ID provided:', codeId);
 
-      if (error) {
-        throw error;
+      let data;
+
+      if (codeId) {
+        // Use freelancer-access function for freelancers
+        console.log('Using freelancer-access function to get commits');
+        const { data: response, error } = await supabase.functions.invoke('freelancer-access', {
+          body: {
+            action: 'get-commits',
+            codeId: codeId,
+            repoIds: repoIds,
+          },
+        });
+
+        if (error) {
+          console.error('Freelancer access function error:', error);
+          throw error;
+        }
+
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to load commits');
+        }
+
+        data = response.commits;
+        console.log('Commits from freelancer-access:', data?.length || 0);
+      } else {
+        // Use direct database query for authenticated users
+        console.log('Using direct database query for commits');
+        const { data: queryData, error } = await supabase
+          .from('github_commits')
+          .select('commit_date, enhanced_category, author_name, repo_id')
+          .in('repo_id', repoIds)
+          .order('commit_date', { ascending: false });
+
+        if (error) {
+          console.error('Database error loading commits:', error);
+          throw error;
+        }
+
+        data = queryData;
+        console.log('Commits from database:', data?.length || 0);
       }
 
-      console.log('Loaded commits:', data?.length || 0);
+      console.log('Sample commit data:', data?.slice(0, 3));
+
+      // Also check what commits exist in the database (for debugging)
+      if (!codeId) {
+        const { data: allCommitsData, error: allCommitsError } = await supabase
+          .from('github_commits')
+          .select('repo_id, commit_date')
+          .limit(10);
+
+        console.log('All commits in database (first 10):', allCommitsData);
+        console.log('All commits error:', allCommitsError);
+
+        // Check if repo_ids match
+        if (allCommitsData && allCommitsData.length > 0) {
+          const dbRepoIds = [...new Set(allCommitsData.map(c => c.repo_id))];
+          console.log('Repo IDs in commits table:', dbRepoIds);
+          console.log('Repo IDs from repositories:', repoIds);
+          console.log('Matching repo IDs:', dbRepoIds.filter(id => repoIds.includes(id)));
+        }
+      }
+
       setAllCommits(data || []);
     } catch (error) {
       console.error('Error loading commits for charts:', error);
@@ -217,10 +274,33 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
   };
 
   const fetchCommitsFromGitHub = async () => {
+    // Check if this is freelancer access
+    if (codeId) {
+      toast({
+        title: "Access Restricted",
+        description: "Freelancers can only view existing commit data. Repository owners must fetch new commits.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setFetchingCommits(true);
 
+      // Check if user is authenticated before making the request
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to fetch commits from GitHub.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       for (const repo of repositories) {
+        console.log('Fetching commits for repo:', repo.owner, repo.repo, 'ID:', repo.id);
+
         const { data, error } = await supabase.functions.invoke('github-integration', {
           body: {
             action: 'fetch-commits',
@@ -229,8 +309,11 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
         });
 
         if (error) {
+          console.error('Function invocation error:', error);
           throw error;
         }
+
+        console.log('GitHub integration response:', data);
 
         if (!data.success) {
           if (data.rateLimited) {
@@ -286,7 +369,7 @@ export const GitHubCommitCharts: React.FC<GitHubCommitChartsProps> = ({ reposito
       console.error('Error fetching commits from GitHub:', error);
       toast({
         title: "Error fetching commits",
-        description: "Failed to fetch commits from GitHub. Please try again.",
+        description: error.message || "Failed to fetch commits from GitHub. Please try again.",
         variant: "destructive",
       });
     } finally {

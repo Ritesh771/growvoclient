@@ -58,13 +58,29 @@ CREATE TABLE public.github_commits (
 ALTER TABLE public.github_commits ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for commit access (through repository ownership)
-CREATE POLICY "Users can view commits for their repositories" 
-ON public.github_commits 
-FOR SELECT 
+CREATE POLICY "Users can view commits for their repositories"
+ON public.github_commits
+FOR SELECT
 USING (
   EXISTS (
-    SELECT 1 FROM public.github_repositories 
+    SELECT 1 FROM public.github_repositories
     WHERE id = repo_id AND user_id = auth.uid()
+  )
+);
+
+-- Allow freelancers to access commits via valid project codes
+CREATE POLICY "Freelancers can view commits via project codes"
+ON public.github_commits
+FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.github_repositories gr
+    JOIN public.project_codes pc ON pc.created_by = gr.user_id
+    WHERE gr.id = repo_id
+    AND pc.is_active = true
+    AND pc.expires_at > now()
+    -- Note: We don't check if the freelancer has the specific code here
+    -- The application logic handles code validation separately
   )
 );
 

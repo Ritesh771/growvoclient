@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AdminView } from '@/components/AdminView';
 import { LoginForm } from '@/components/LoginForm';
@@ -11,22 +12,42 @@ type ViewType = 'home' | 'admin' | 'developer' | 'login';
 
 const Index = () => {
   const { user, loading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentView, setCurrentView] = useState<ViewType>('home');
+
+  // Initialize view from URL parameters on component mount
+  useEffect(() => {
+    const viewParam = searchParams.get('view') as ViewType;
+    if (viewParam && ['home', 'admin', 'developer', 'login'].includes(viewParam)) {
+      setCurrentView(viewParam);
+    }
+  }, [searchParams]);
+
+  // Update URL when view changes
+  const updateView = (view: ViewType) => {
+    setCurrentView(view);
+    if (view === 'home') {
+      // Remove view parameter for home
+      setSearchParams({});
+    } else {
+      setSearchParams({ view });
+    }
+  };
 
   const handleAdminClick = () => {
     if (user) {
-      setCurrentView('admin');
+      updateView('admin');
     } else {
-      setCurrentView('login');
+      updateView('login');
     }
   };
 
   const handleLogin = () => {
-    setCurrentView('admin');
+    updateView('admin');
   };
 
   const handleLogout = () => {
-    setCurrentView('home');
+    updateView('home');
   };
 
   if (loading) {
@@ -44,7 +65,7 @@ const Index = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => setCurrentView('home')}
+            onClick={() => updateView('home')}
             className="p-2 hover:bg-primary/10 transition-colors hover-scale"
           >
             <ArrowLeft className="h-5 w-5 text-primary" />
@@ -58,7 +79,7 @@ const Index = () => {
   if (currentView === 'admin') {
     return (
       <div className="container mx-auto mobile-optimized py-6 max-w-5xl">
-        <AdminView onLogout={handleLogout} onBack={() => setCurrentView('home')} />
+        <AdminView onLogout={handleLogout} onBack={() => updateView('home')} />
       </div>
     );
   }
@@ -70,7 +91,7 @@ const Index = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => setCurrentView('home')}
+            onClick={() => updateView('home')}
             className="p-2 hover:bg-primary/10 transition-colors hover-scale"
           >
             <ArrowLeft className="h-5 w-5 text-primary" />
@@ -143,7 +164,7 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <Button 
-                onClick={() => setCurrentView('developer')}
+                onClick={() => updateView('developer')}
                 className="w-full btn-secondary text-sm md:text-base hover-scale"
                 variant="outline"
               >
