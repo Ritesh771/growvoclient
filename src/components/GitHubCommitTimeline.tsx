@@ -143,57 +143,60 @@ export const GitHubCommitTimeline: React.FC<GitHubCommitTimelineProps> = ({ repo
       </Card>
     );
   }
-
-  return (
-    <div className="space-y-6">
-      {/* Repository Selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Repository Timeline</span>
+    return (
+            <div className="space-y-6">
+              {/* Repository Selector */}
+              <Card>
+                <CardHeader>
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <span className="text-base sm:text-lg">Repository Timeline</span>
             <Button
               onClick={fetchLatestCommits}
               disabled={loading || !selectedRepo}
               size="sm"
               variant="outline"
+              className="w-full sm:w-auto truncate"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
                 <RefreshCw className="h-4 w-4 mr-2" />
               )}
-              Refresh Commits
+              <span className="hidden xs:inline">Refresh Commits</span>
+              <span className="xs:hidden">Refresh Commits</span>
             </Button>
           </CardTitle>
           <CardDescription>
             Select a repository to view its commit history
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex gap-2 flex-wrap">
-            {repositories.map((repo) => (
-              <Button
-                key={repo.id}
-                variant={selectedRepo?.id === repo.id ? "default" : "outline"}
-                onClick={() => setSelectedRepo(repo)}
-                size="sm"
-              >
-                {repo.owner}/{repo.repo}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Commit Timeline */}
-      {selectedRepo && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <GitCommit className="h-5 w-5" />
-              Commits for {selectedRepo.owner}/{selectedRepo.repo}
-            </CardTitle>
-            <CardDescription>
+           <CardContent>
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                  {repositories.map((repo) => (
+                    <Button
+                      key={repo.id}
+                      variant={selectedRepo?.id === repo.id ? "default" : "outline"}
+                      onClick={() => setSelectedRepo(repo)}
+                      size="sm"
+                      className="flex-shrink-0 max-w-[200px] truncate"
+                    >
+                      {repo.owner}/{repo.repo}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+              </Card>
+              {/* Commit Timeline */}
+                    {selectedRepo && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-start gap-2 flex-wrap break-words">
+                <GitCommit className="h-5 w-5 flex-shrink-0 mt-1" />
+                <span className="text-sm sm:text-base break-words">
+                  Commits for {selectedRepo.owner}/{selectedRepo.repo}
+                </span>
+              </CardTitle>
+               <CardDescription>
               {commits.length} commits loaded
             </CardDescription>
           </CardHeader>
@@ -217,32 +220,35 @@ export const GitHubCommitTimeline: React.FC<GitHubCommitTimelineProps> = ({ repo
                     <div className="flex gap-4">
                       <div className={`w-6 h-6 rounded-full ${getCategoryColor(commit.enhanced_category)} flex-shrink-0 relative z-10`} />
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground break-words">
-                              {commit.message}
-                            </p>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1 text-xs text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                <span className="truncate">{commit.author_name}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                <span>{formatDate(commit.commit_date)}</span>
-                              </div>
+                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+                        {/* Commit message + author */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground break-words">
+                            {commit.message}
+                          </p>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              <span className="truncate max-w-[120px] sm:max-w-none">{commit.author_name}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>{formatDate(commit.commit_date)}</span>
                             </div>
                           </div>
-                          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:flex-shrink-0">
-                            <Badge variant="secondary" className="text-xs w-fit">
-                              {commit.enhanced_category}
-                            </Badge>
-                            <code className="text-xs bg-muted px-2 py-1 rounded break-all sm:break-normal">
-                              {commit.sha.substring(0, 7)}
-                            </code>
-                          </div>
+                        </div>
+
+                        {/* Right side (category + sha) */}
+                        <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:flex-shrink-0 w-full sm:w-auto">
+                          <Badge variant="secondary" className="text-xs w-fit">
+                            {commit.enhanced_category}
+                          </Badge>
+                          <code className="text-xs bg-muted px-2 py-1 rounded break-all sm:break-normal">
+                            {commit.sha.substring(0, 7)}
+                          </code>
                         </div>
                       </div>
+                     </div>
                     </div>
                   </div>
                 ))}

@@ -223,20 +223,22 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="codes" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="codes" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
+         <div className="flex flex-col gap-4">
+           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto p-1">
+          <TabsTrigger value="codes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2">
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
             Access Codes
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
+          <TabsTrigger value="analytics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2">
+            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
             Usage Analytics
           </TabsTrigger>
-          <TabsTrigger value="github" className="flex items-center gap-2">
-            <GitBranch className="h-4 w-4" />
+          <TabsTrigger value="github" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2">
+            <GitBranch className="h-3 w-3 sm:h-4 sm:w-4" />
             GitHub Integration
           </TabsTrigger>
         </TabsList>
+          </div>
 
         <TabsContent value="codes" className="space-y-6">
           {/* Current Code Section */}
@@ -247,16 +249,16 @@ export const AdminView = ({ onLogout, onBack }: AdminViewProps) => {
                 Active Project Code
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {activeCode ? (
+            <CardContent className="space-y-6 overflow-x-hidden">
+                 {activeCode ? (
                 <>
                   <div className="relative">
-                    <div className="code-display">
-                      <span className="relative z-10 text-primary font-mono font-black text-5xl md:text-6xl tracking-widest">
+                    <div className="code-display break-words text-center">
+                      <span className="relative z-10 text-primary font-mono font-black text-4xl sm:text-5xl md:text-6xl tracking-widest">
                         {activeCode.code}
-                      </span>
-                    </div>
-                    <div className="absolute -top-2 -right-2 px-3 py-1 bg-success text-success-foreground text-xs font-medium rounded-full shadow-lg animate-pulse">
+                          </span>
+                        </div>
+                          <div className="absolute -top-1 right-2 px-3 py-1 bg-success text-success-foreground text-xs font-medium rounded-full shadow-lg animate-pulse">
                       Active
                     </div>
                   </div>
