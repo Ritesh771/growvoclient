@@ -219,104 +219,109 @@ export const FreelancerPortal = ({ codeId, freelancerName, onBack, onSwitchProje
           transition={{ duration: 0.5 }}
         >
           <Card className="card-glass">
-            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-              <div className="flex items-center gap-3">
-                
-                <div className="p-2 rounded-lg bg-primary/10 overflow-hidden">
-                  <img 
-                    src="/growvo.png" 
-                    alt="Growvo Logo" 
-                    className="h-6 w-6 object-contain"
-                  />
-                </div>
-                <div>
-                  <CardTitle className="brand-logo gradient-text text-xl md:text-2xl">
-                    Freelancer Portal
-                  </CardTitle>
-                  <div className="text-muted-foreground text-sm space-y-1">
-                    <p>Welcome, {freelancerName}</p>
-                    {clientName && (
-                      <p className="text-primary font-medium">
-                        Viewing project by: 
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ml-1 ${
-                          clientColor === 'blue' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                          clientColor === 'green' ? 'bg-green-100 text-green-800 border border-green-200' :
-                          clientColor === 'purple' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
-                          clientColor === 'orange' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
-                          clientColor === 'pink' ? 'bg-pink-100 text-pink-800 border border-pink-200' :
-                          clientColor === 'indigo' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
-                          clientColor === 'teal' ? 'bg-teal-100 text-teal-800 border border-teal-200' :
-                          clientColor === 'cyan' ? 'bg-cyan-100 text-cyan-800 border border-cyan-200' :
-                          'bg-gray-100 text-gray-800 border border-gray-200'
-                        }`}>
-                          <span className={`w-2 h-2 rounded-full ${
-                            clientColor === 'blue' ? 'bg-blue-500' :
-                            clientColor === 'green' ? 'bg-green-500' :
-                            clientColor === 'purple' ? 'bg-purple-500' :
-                            clientColor === 'orange' ? 'bg-orange-500' :
-                            clientColor === 'pink' ? 'bg-pink-500' :
-                            clientColor === 'indigo' ? 'bg-indigo-500' :
-                            clientColor === 'teal' ? 'bg-teal-500' :
-                            clientColor === 'cyan' ? 'bg-cyan-500' :
-                            'bg-gray-500'
-                          }`} />
-                          {clientName}
-                        </span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <User className="h-3 w-3" />
-                  Freelancer Access
-                </Badge>
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Shield className="h-3 w-3" />
-                  Code: {projectCode?.code}
-                </Badge>
-                {timeLeft && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {timeLeft}
-                  </Badge>
-                )}
-                {onSwitchProject && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-2 hover:bg-primary/10 transition-colors"
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                        Switch Project
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Switch to Different Client Project?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will end your current session with <strong>{clientName || 'this client'}</strong> and return you to the access code entry screen. 
-                          You'll need to enter a new 6-digit code to access a different client's project.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Stay Here</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={onSwitchProject}
-                          className="bg-primary hover:bg-primary/90"
-                        >
-                          Switch Project
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-              </div>
-            </CardHeader>
-          </Card>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Left section (Logo + Text Info) */}
+            <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10 overflow-hidden">
+            <img 
+             src="/growvo.png" 
+            alt="Growvo Logo" 
+             className="h-6 w-6 object-contain"
+             />
+            </div>
+            <div>
+      <CardTitle className="brand-logo gradient-text text-xl md:text-2xl">
+        Freelancer Portal
+      </CardTitle>
+      <div className="text-muted-foreground text-sm space-y-1">
+        <p>Welcome, {freelancerName}</p>
+        {clientName && (
+          <p className="text-primary font-medium">
+            Viewing project by:{" "}
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ml-1 ${
+              clientColor === 'blue' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+              clientColor === 'green' ? 'bg-green-100 text-green-800 border border-green-200' :
+              clientColor === 'purple' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+              clientColor === 'orange' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+              clientColor === 'pink' ? 'bg-pink-100 text-pink-800 border border-pink-200' :
+              clientColor === 'indigo' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+              clientColor === 'teal' ? 'bg-teal-100 text-teal-800 border border-teal-200' :
+              clientColor === 'cyan' ? 'bg-cyan-100 text-cyan-800 border border-cyan-200' :
+              'bg-gray-100 text-gray-800 border border-gray-200'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${
+                clientColor === 'blue' ? 'bg-blue-500' :
+                clientColor === 'green' ? 'bg-green-500' :
+                clientColor === 'purple' ? 'bg-purple-500' :
+                clientColor === 'orange' ? 'bg-orange-500' :
+                clientColor === 'pink' ? 'bg-pink-500' :
+                clientColor === 'indigo' ? 'bg-indigo-500' :
+                clientColor === 'teal' ? 'bg-teal-500' :
+                clientColor === 'cyan' ? 'bg-cyan-500' :
+                'bg-gray-500'
+              }`} />
+              {clientName}
+            </span>
+          </p>
+        )}
+      </div>
+    </div>
+  </div>
+
+  {/* Right section (Badges + Button) */}
+  <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+    <div className="flex flex-wrap gap-2">
+      <Badge variant="secondary" className="flex items-center gap-1">
+        <User className="h-3 w-3" />
+        Freelancer Access
+      </Badge>
+      <Badge variant="outline" className="flex items-center gap-1">
+        <Shield className="h-3 w-3" />
+        Code: {projectCode?.code}
+      </Badge>
+      {timeLeft && (
+        <Badge variant="outline" className="flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {timeLeft}
+        </Badge>
+      )}
+    </div>
+
+    {onSwitchProject && (
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2 hover:bg-primary/10 transition-colors self-start sm:self-auto"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Switch Project
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Switch to Different Client Project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will end your current session with <strong>{clientName || 'this client'}</strong> and return you to the access code entry screen. 
+              You'll need to enter a new 6-digit code to access a different client's project.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay Here</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={onSwitchProject}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Switch Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )}
+  </div>
+</CardHeader>
+   </Card>
         </motion.div>
 
         {/* Project Information */}

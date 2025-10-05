@@ -242,8 +242,8 @@ export const CodeUsageAnalytics: React.FC<CodeUsageAnalyticsProps> = ({ codes })
           <CardDescription>
             Detailed breakdown of freelancer access for each project code
           </CardDescription>
-        </CardHeader>
-        <CardContent>
+      
+        
           {usageData.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -361,7 +361,7 @@ export const CodeUsageAnalytics: React.FC<CodeUsageAnalyticsProps> = ({ codes })
               ))}
             </div>
           )}
-        </CardContent>
+        </CardHeader>
       </Card>
     </div>
   );
